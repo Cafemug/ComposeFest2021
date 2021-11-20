@@ -48,16 +48,42 @@ class RallyActivity : ComponentActivity() {
 fun RallyApp() {
     RallyTheme {
         val allScreens = RallyScreen.values().toList()
-        var currentScreen by rememberSaveable { mutableStateOf(RallyScreen.Overview) }
+        val navController = rememberNavController()
+        val backstackEntry = navController.currentBackStackEntryAsState()
+        val currentScreen = RallyScreen.fromRoute(
+            backstackEntry.value?.destination?.route
+        )
         Scaffold(
             topBar = {
                 RallyTabRow(
                     allScreens = allScreens,
-                    onTabSelected = { screen -> currentScreen = screen },
-                    currentScreen = currentScreen
+                    onTabSelected = { screen ->
+                        navController.navigate(screen.name)
+                    },
+                    currentScreen = currentScreen,
                 )
             }
         ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = RallyScreen.Overview.name,
+                modifier = Modifier.padding(innerPadding)
+
+            ) {
+                OverviewBody(
+                    onClickSeeAllAccounts = { navController.navigate(Accounts.name) },
+                    onClickSeeAllBills = { navController.navigate(Bills.name) },
+                )
+                composable(Overview.name) {
+                    OverviewBody()
+                }
+                composable(Accounts.name) {
+                    AccountsBody(accounts = UserData.accounts)
+                }
+                composable(Bills.name) {
+                    BillsBody(bills = UserData.bills)
+                }
+            }
             Box(Modifier.padding(innerPadding)) {
                 currentScreen.content(
                     onScreenChange = { screen ->
